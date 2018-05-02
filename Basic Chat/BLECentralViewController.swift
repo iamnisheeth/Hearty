@@ -75,7 +75,7 @@ class BLECentralViewController : UIViewController, CBCentralManagerDelegate, CBP
         print("Now Scanning...")
         self.timer.invalidate()
         centralManager?.scanForPeripherals(withServices: [BLEService_UUID] , options: [CBCentralManagerScanOptionAllowDuplicatesKey:false])
-        Timer.scheduledTimer(timeInterval: 17, target: self, selector: #selector(self.cancelScan), userInfo: nil, repeats: false)
+        Timer.scheduledTimer(timeInterval: 20, target: self, selector: #selector(self.cancelScan), userInfo: nil, repeats: false)
     }
     
     /*We also need to stop scanning at some point so we'll also create a function that calls "stopScan"*/

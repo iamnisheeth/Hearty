@@ -29,7 +29,22 @@ class UartModuleViewController: UIViewController, CBPeripheralManagerDelegate, U
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        let swipeDown = UISwipeGestureRecognizer(target: self, action: "swiped:")
+        swipeDown.direction = .down
+        self.view.addGestureRecognizer(swipeDown)
         
+        let swipeUp = UISwipeGestureRecognizer(target: self, action: "swiped:")
+        swipeUp.direction = .up
+        self.view.addGestureRecognizer(swipeUp)
+        
+        let swipeRight = UISwipeGestureRecognizer(target: self, action: "swiped:")
+        swipeRight.direction = .right
+        self.view.addGestureRecognizer(swipeRight)
+        
+        let swipeLeft = UISwipeGestureRecognizer(target: self, action: "swiped:")
+        swipeLeft.direction = .left
+        self.view.addGestureRecognizer(swipeLeft)
+    
         self.navigationItem.backBarButtonItem = UIBarButtonItem(title:"Back", style:.plain, target:nil, action:nil)
         self.baseTextView.delegate = self
         self.inputTextField.delegate = self
@@ -60,6 +75,31 @@ class UartModuleViewController: UIViewController, CBPeripheralManagerDelegate, U
         super.viewDidDisappear(animated)
         NotificationCenter.default.removeObserver(self)
         
+    }
+    
+    func swiped(gesture: UIGestureRecognizer)
+    {
+        if let swipeGesture = gesture as? UISwipeGestureRecognizer
+        {
+            switch swipeGesture.direction
+            {
+                
+            case UISwipeGestureRecognizerDirection.right:
+                print("Swiped Right")
+            case UISwipeGestureRecognizerDirection.left:
+                print("Swiped Left")
+            case UISwipeGestureRecognizerDirection.up:
+                print("Swiped Up")
+            case UISwipeGestureRecognizerDirection.down:
+                print("Swiped Down")
+                
+            default:
+                break
+            }
+        }
+    }
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
     }
     
     func updateIncomingData () {
@@ -112,9 +152,10 @@ class UartModuleViewController: UIViewController, CBPeripheralManagerDelegate, U
     func writeValue(data: String){
         let valueString = (data as NSString).data(using: String.Encoding.utf8.rawValue)
         //change the "data" to valueString
+        print("Trying to write this :")
         if let blePeripheral = blePeripheral{
             if let txCharacteristic = txCharacteristic {
-                blePeripheral.writeValue(valueString!, for: txCharacteristic, type: CBCharacteristicWriteType.withResponse)
+                blePeripheral.writeValue(valueString!, for: txCharacteristic, type: CBCharacteristicWriteType.withoutResponse)
             }
         }
     }
