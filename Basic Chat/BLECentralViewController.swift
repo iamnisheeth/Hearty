@@ -30,6 +30,9 @@ class BLECentralViewController : UIViewController, CBCentralManagerDelegate, CBP
     var timer = Timer()
     var characteristics = [String : CBCharacteristic]()
     
+  
+
+    
     //UI
     @IBOutlet weak var baseTableView: UITableView!
     @IBOutlet weak var refreshButton: UIBarButtonItem!
@@ -74,8 +77,12 @@ class BLECentralViewController : UIViewController, CBCentralManagerDelegate, CBP
         peripherals = []
         print("Now Scanning...")
         self.timer.invalidate()
+        print("before starting bluetooth cmds")
         centralManager?.scanForPeripherals(withServices: [BLEService_UUID] , options: [CBCentralManagerScanOptionAllowDuplicatesKey:false])
+        print("started bluetooth cmds")
+
         Timer.scheduledTimer(timeInterval: 20, target: self, selector: #selector(self.cancelScan), userInfo: nil, repeats: false)
+           print("finished adding bluetooth device")
     }
     
     /*We also need to stop scanning at some point so we'll also create a function that calls "stopScan"*/
@@ -353,13 +360,14 @@ class BLECentralViewController : UIViewController, CBCentralManagerDelegate, CBP
      This is where we kick off the scan if Bluetooth is turned on.
      */
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        if central.state == CBManagerState.poweredOn {
+        if central.state != CBManagerState.poweredOn {
             // We will just handle it the easy way here: if Bluetooth is on, proceed...start scan!
             print("Bluetooth Enabled")
             startScan()
             
         } else {
             //If Bluetooth is off, display a UI alert message saying "Bluetooth is not enable" and "Make sure that your bluetooth is turned on"
+            
             print("Bluetooth Disabled- Make sure your Bluetooth is turned on")
             
             let alertVC = UIAlertController(title: "Bluetooth is not enabled", message: "Make sure that your bluetooth is turned on", preferredStyle: UIAlertControllerStyle.alert)

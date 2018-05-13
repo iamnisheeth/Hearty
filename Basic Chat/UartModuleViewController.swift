@@ -6,53 +6,57 @@
 //  Copyright © 2016 Vanguard Logic LLC. All rights reserved.
 //
 
-
-
-
-
 import UIKit
 import CoreBluetooth
 
 class UartModuleViewController: UIViewController, CBPeripheralManagerDelegate, UITextViewDelegate, UITextFieldDelegate {
     
     //UI
-    @IBOutlet weak var baseTextView: UITextView!
+//    @IBOutlet weak var baseTextView: UITextView!
     @IBOutlet weak var sendButton: UIButton!
     @IBOutlet weak var inputTextField: UITextField!
     @IBOutlet weak var scrollView: UIScrollView!
-    @IBOutlet weak var switchUI: UISwitch!
+//    @IBOutlet weak var switchUI: UISwitch!
+    @IBOutlet weak var viewTap: UIScrollView!
+    
     //Data
     var peripheralManager: CBPeripheralManager?
     var peripheral: CBPeripheral!
     private var consoleAsciiText:NSAttributedString? = NSAttributedString(string: "")
-    
+
+    var swipeGesture  = UISwipeGestureRecognizer()
+    var tapGesture = UITapGestureRecognizer()
+    var heartyState = "text"
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        let swipeDown = UISwipeGestureRecognizer(target: self, action: "swiped:")
-        swipeDown.direction = .down
-        self.view.addGestureRecognizer(swipeDown)
-        
-        let swipeUp = UISwipeGestureRecognizer(target: self, action: "swiped:")
-        swipeUp.direction = .up
-        self.view.addGestureRecognizer(swipeUp)
-        
-        let swipeRight = UISwipeGestureRecognizer(target: self, action: "swiped:")
-        swipeRight.direction = .right
-        self.view.addGestureRecognizer(swipeRight)
-        
-        let swipeLeft = UISwipeGestureRecognizer(target: self, action: "swiped:")
-        swipeLeft.direction = .left
-        self.view.addGestureRecognizer(swipeLeft)
     
+        // SWIPE GESTURE
+        let directions: [UISwipeGestureRecognizerDirection] = [.up, .down, .right, .left]
+        for direction in directions {
+            swipeGesture = UISwipeGestureRecognizer(target: self, action: #selector(UartModuleViewController.swipwView(_:)))
+            scrollView.addGestureRecognizer(swipeGesture)
+            swipeGesture.direction = direction
+            scrollView.isUserInteractionEnabled = true
+            scrollView.isMultipleTouchEnabled = true
+        
+        // TAP Gesture
+        tapGesture = UITapGestureRecognizer(target: self, action: #selector(UartModuleViewController.myviewTapped(_:)))
+        tapGesture.numberOfTapsRequired = 1
+        tapGesture.numberOfTouchesRequired = 1
+        viewTap.addGestureRecognizer(tapGesture)
+        viewTap.isUserInteractionEnabled = true
+
+        }
+        
         self.navigationItem.backBarButtonItem = UIBarButtonItem(title:"Back", style:.plain, target:nil, action:nil)
-        self.baseTextView.delegate = self
+//        self.baseTextView.delegate = self
         self.inputTextField.delegate = self
         //Base text view setup
-        self.baseTextView.layer.borderWidth = 3.0
-        self.baseTextView.layer.borderColor = UIColor.blue.cgColor
-        self.baseTextView.layer.cornerRadius = 3.0
-        self.baseTextView.text = ""
+//        self.baseTextView.layer.borderWidth = 3.0
+//        self.baseTextView.layer.borderColor = UIColor.blue.cgColor
+//        self.baseTextView.layer.cornerRadius = 3.0
+//        self.baseTextView.text = ""
         //Input Text Field setup
         self.inputTextField.layer.borderWidth = 2.0
         self.inputTextField.layer.borderColor = UIColor.blue.cgColor
@@ -64,10 +68,12 @@ class UartModuleViewController: UIViewController, CBPeripheralManagerDelegate, U
     }
     
     override func viewDidAppear(_ animated: Bool) {
-        self.baseTextView.text = ""
+//        self.baseTextView.text = ""
         
         
     }
+    
+    
     
     override func viewDidDisappear(_ animated: Bool) {
         // peripheralManager?.stopAdvertising()
@@ -77,29 +83,46 @@ class UartModuleViewController: UIViewController, CBPeripheralManagerDelegate, U
         
     }
     
-    func swiped(gesture: UIGestureRecognizer)
-    {
-        if let swipeGesture = gesture as? UISwipeGestureRecognizer
-        {
-            switch swipeGesture.direction
-            {
-                
-            case UISwipeGestureRecognizerDirection.right:
-                print("Swiped Right")
-            case UISwipeGestureRecognizerDirection.left:
-                print("Swiped Left")
-            case UISwipeGestureRecognizerDirection.up:
-                print("Swiped Up")
-            case UISwipeGestureRecognizerDirection.down:
-                print("Swiped Down")
-                
-            default:
-                break
-            }
-        }
-    }
+
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
+    }
+    func singleTap(gesture: UITapGestureRecognizer) {
+        print("single tap called")
+    }
+
+    func myviewTapped(_ sender: UITapGestureRecognizer) {
+        
+        if (heartyState != "text" ){
+        print("---- * ---- * --- single tap called --- * ---")
+        // send respective commands to hearty
+        let ctrlchar = "D"
+        writeValue(data: ctrlchar)
+        }
+    }
+    func swipwView(_ sender : UISwipeGestureRecognizer){
+        var controlchar = "s"
+        if (heartyState != "text" ){
+        UIView.animate(withDuration: 1.0) {
+            if sender.direction == .right {
+                print(" -- R I G H T --")
+                 controlchar = "S"
+            }else if sender.direction == .left{
+                print(" -- L E F T --")
+                controlchar = "A"
+            }else if sender.direction == .up{
+                print(" --   U   P  --")
+                controlchar = "W"
+            }else if sender.direction == .down{
+                print(" -- D  O W  N --")
+                controlchar = "Z"
+            }
+            self.scrollView.layoutIfNeeded()
+            self.scrollView.setNeedsDisplay()
+        }
+        // send respective commands to hearty
+        writeValue(data: controlchar)
+        }
     }
     
     func updateIncomingData () {
@@ -110,12 +133,12 @@ class UartModuleViewController: UIViewController, CBPeripheralManagerDelegate, U
             let myAttributes2 = [NSFontAttributeName: myFont!, NSForegroundColorAttributeName: UIColor.red]
             let attribString = NSAttributedString(string: "[Incoming]: " + (characteristicASCIIValue as String) + appendString, attributes: myAttributes2)
             let newAsciiText = NSMutableAttributedString(attributedString: self.consoleAsciiText!)
-            self.baseTextView.attributedText = NSAttributedString(string: characteristicASCIIValue as String , attributes: myAttributes2)
+//            self.baseTextView.attributedText = NSAttributedString(string: characteristicASCIIValue as String , attributes: myAttributes2)
             
             newAsciiText.append(attribString)
             
             self.consoleAsciiText = newAsciiText
-            self.baseTextView.attributedText = self.consoleAsciiText
+//            self.baseTextView.attributedText = self.consoleAsciiText
             
         }
     }
@@ -135,6 +158,17 @@ class UartModuleViewController: UIViewController, CBPeripheralManagerDelegate, U
         let myFont = UIFont(name: "Helvetica Neue", size: 15.0)
         let myAttributes1 = [NSFontAttributeName: myFont!, NSForegroundColorAttributeName: UIColor.blue]
         
+        switch inputText {
+        case "snake"  :
+            heartyState = "snake"
+        case "tetris" :
+            heartyState = "tetris"
+            
+        case "exit" :
+           heartyState = "text"
+        default:
+             heartyState = "text"
+        }
         writeValue(data: inputText!)
         
         let attribString = NSAttributedString(string: "[Outgoing]: " + inputText! + appendString, attributes: myAttributes1)
@@ -142,7 +176,7 @@ class UartModuleViewController: UIViewController, CBPeripheralManagerDelegate, U
         newAsciiText.append(attribString)
         
         consoleAsciiText = newAsciiText
-        baseTextView.attributedText = consoleAsciiText
+//        baseTextView.attributedText = consoleAsciiText
         //erase what's in the text field
         inputTextField.text = ""
         
@@ -169,14 +203,14 @@ class UartModuleViewController: UIViewController, CBPeripheralManagerDelegate, U
     
     
     //MARK: UITextViewDelegate methods
-    func textViewShouldBeginEditing(_ textView: UITextView) -> Bool {
-        if textView === baseTextView {
-            //tapping on consoleview dismisses keyboard
-            inputTextField.resignFirstResponder()
-            return false
-        }
-        return true
-    }
+//    func textViewShouldBeginEditing(_ textView: UITextView) -> Bool {
+//        if textView === baseTextView {
+//            //tapping on consoleview dismisses keyboard
+//            inputTextField.resignFirstResponder()
+//            return false
+//        }
+//        return true
+//    }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
         scrollView.setContentOffset(CGPoint(x:0, y:250), animated: true)
@@ -200,18 +234,18 @@ class UartModuleViewController: UIViewController, CBPeripheralManagerDelegate, U
     
     //This on/off switch sends a value of 1 and 0 to the Arduino
     //This can be used as a switch or any thing you'd like
-    @IBAction func switchAction(_ sender: Any) {
-        if switchUI.isOn {
-            print("On ")
-            writeCharacteristic(val: 1)
-        }
-        else
-        {
-            print("Off")
-            writeCharacteristic(val: 0)
-            print(writeCharacteristic)
-        }
-    }
+//    @IBAction func switchAction(_ sender: Any) {
+//        if switchUI.isOn {
+//            print("On ")
+//            writeCharacteristic(val: 1)
+//        }
+//        else
+//        {
+//            print("Off")
+//            writeCharacteristic(val: 0)
+//            print(writeCharacteristic)
+//        }
+//    }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         self.view.endEditing(true)
